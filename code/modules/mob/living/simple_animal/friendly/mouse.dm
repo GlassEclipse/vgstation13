@@ -526,6 +526,10 @@
 	response_disarm = "gently pushes aside"
 	response_harm   = "tenderizes"
 
+////
+//// THE SYNDIE MOUSE
+////
+	
 /mob/living/simple_animal/mouse/mouse_op
 	name = "mouse operative"
 	desc = "Oh no..."
@@ -541,8 +545,87 @@
 	universal_understand = 1
 	can_chew_wires = 1
 	mutations = list(M_NO_SHOCK)
+	status_flags = CANPUSH
+	held_items = list(null, null)
+	var/list/obj/abstract/Overlays/obj_overlays[TOTAL_LAYERS]
 
+/mob/living/simple_animal/mouse/mouse_op/unarmed_attack_mob(var/mob/living/target)
+
+	if(!can_be_infected())
+		return
+	var/block = 0
+	var/bleeding = 0
+
+	var/contact_target = FEET
+
+	if (target.lying)//if our target is lying down, maybe we can reach more than just their toes.
+		contact_target = pick(FEET,EARS,HANDS)
+
+	if (check_contact_sterility(MOUTH) || target.check_contact_sterility(contact_target))//only one side has to wear protective clothing to prevent contact infection
+		block = 1
+	if (check_bodypart_bleeding(MOUTH) && target.check_bodypart_bleeding(contact_target))//both sides have to be bleeding to allow for blood infections
+		bleeding = 1
+	share_contact_diseases(target,block,bleeding)
+
+	var/part = "toes"
+	switch (contact_target)
+		if (EARS)
+			part = "ear lobes"
+		if (HANDS)
+			part = "fingers"
+	visible_message("\The [src] [pick("nibbles on","tickles")] \the [target]'s [part][block ? ", but their clothing prevents direct contact." : "!"]")
+	
+	
+/mob/living/simple_animal/mouse/mouse_op/show_inv(mob/living/carbon/user)
+	user.set_machine(src)
+	var/dat = ""
+	var/obj/item/I = held_items[1]
+	dat += "<B>[capitalize("Magneto Disk Gripper")]</B> <A href='?src=\ref[src];hands=[1]'>[makeStrippingButton(I)]</A><BR>"
+	dat += "<BR><BR><A href='?src=\ref[user];mach_close=mob\ref[src]'>Close</A>"
+	var/datum/browser/popup = new(user, "mob\ref[src]", "[src]", 340, 500)
+	popup.set_content(dat)
+	popup.open()
+
+/mob/living/simple_animal/mouse/mouse_op/update_inv_hand(index, var/update_icons = 1)
+	message_admins("the fuck")
+	if(!obj_overlays)
+		return
+	var/obj/abstract/Overlays/hand_layer/O = obj_overlays["[HAND_LAYER]-[index]"]
+	if(!O)
+		O = getFromPool(/obj/abstract/Overlays/hand_layer)
+		obj_overlays["[HAND_LAYER]-[index]"] = O
+	else
+		overlays.Remove(O)
+		O.overlays.len = 0
+	var/obj/item/I = get_held_item_by_index(index)
+	if(I && I.is_visible())
+		var/t_state = I.item_state
+		var/t_inhand_state = I.inhand_states[get_direction_by_index(index)]
+		var/icon/check_dimensions = new(t_inhand_state)
+		if(!t_state)
+			t_state = I.icon_state
+		O.name = "[index]"
+		O.icon = t_inhand_state
+		O.icon_state = t_state
+		O.color = I.color
+		O.pixel_x = -1*(check_dimensions.Width() - WORLD_ICON_SIZE)/2
+		O.pixel_y = -1*(check_dimensions.Height() - WORLD_ICON_SIZE)/2
+		O.layer = O.layer
+		if(I.dynamic_overlay && I.dynamic_overlay["[HAND_LAYER]-[index]"])
+			var/image/dyn_overlay = I.dynamic_overlay["[HAND_LAYER]-[index]"]
+			O.overlays.Add(dyn_overlay)
+		I.screen_loc = get_held_item_ui_location(index)
+		overlays.Add(O)
+	if(update_icons)
+		update_icons()
+	
 /mob/living/simple_animal/mouse/mouse_op/death(var/gibbed = FALSE)
 	..(TRUE)
 	if(gibbed == FALSE)
 		src.gib()
+
+/mob/living/simple_animal/mouse/mouse_op/Login()
+	..()
+	to_chat(src, 	"You are a mouse operative. As a Syndicate-trained mouse, you come equipped with many tools. \
+					Your hardsuit makes you immune to all atmospherics, and comes with a nuclear disk gripper. \
+					Your jaws have been replaced with mini-energy blades, and a pinpointer is installed in your brain.</span>")	
