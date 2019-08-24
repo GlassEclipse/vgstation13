@@ -529,10 +529,10 @@
 ////
 //// THE SYNDIE MOUSE
 ////
-	
-/mob/living/simple_animal/mouse/mouse_op
+
+/mob/living/simple_animal/mouse/mouse_op_mundane
 	name = "mouse operative"
-	desc = "Oh no..."
+	desc = "The ingenuity of the Syndicate is matched only by their willingness for failure."
 	icon_state = "mouse_operative"
 	_color = "operative"
 	namenumbers = FALSE
@@ -546,48 +546,135 @@
 	can_chew_wires = 1
 	mutations = list(M_NO_SHOCK)
 	status_flags = CANPUSH
-	held_items = list(null, null)
+
+	response_help  = "reluctantly pokes"
+	response_disarm = "pushes away"
+	
+	
+	
+/mob/living/simple_animal/mouse/mouse_op
+	name = "mouse operative"
+	desc = "The ingenuity of the Syndicate is matched only by their willingness for failure."
+	icon_state = "mouse_operative"
+	_color = "operative"
+	namenumbers = FALSE
+	min_oxy = 0
+	minbodytemp = 0
+	maxbodytemp = 5000
+	maxHealth = 50
+	health = 50
+	universal_speak = 1
+	universal_understand = 1
+	can_chew_wires = 1
+	mutations = list(M_NO_SHOCK)
+	status_flags = CANPUSH
+	held_items = list(null)
+	response_help  = "reluctantly pokes"
+	response_disarm = "pushes away"
+	melee_damage_lower = 10
+	melee_damage_upper = 20
+	
 	var/list/obj/abstract/Overlays/obj_overlays[TOTAL_LAYERS]
-
-/mob/living/simple_animal/mouse/mouse_op/unarmed_attack_mob(var/mob/living/target)
-
-	if(!can_be_infected())
-		return
-	var/block = 0
-	var/bleeding = 0
-
-	var/contact_target = FEET
-
-	if (target.lying)//if our target is lying down, maybe we can reach more than just their toes.
-		contact_target = pick(FEET,EARS,HANDS)
-
-	if (check_contact_sterility(MOUTH) || target.check_contact_sterility(contact_target))//only one side has to wear protective clothing to prevent contact infection
-		block = 1
-	if (check_bodypart_bleeding(MOUTH) && target.check_bodypart_bleeding(contact_target))//both sides have to be bleeding to allow for blood infections
-		bleeding = 1
-	share_contact_diseases(target,block,bleeding)
-
-	var/part = "toes"
-	switch (contact_target)
-		if (EARS)
-			part = "ear lobes"
-		if (HANDS)
-			part = "fingers"
-	visible_message("\The [src] [pick("nibbles on","tickles")] \the [target]'s [part][block ? ", but their clothing prevents direct contact." : "!"]")
+	var/obj/item/weapon/card/emag/builtin_emag //Airlocks don't use emag_act(), so we need to attack it with an emag. Sorry.
+	var/obj/item/weapon/pinpointer/nukeop/builtin_pinpointer 
+	var/obj/abstract/Overlays/hand_layer/pinpointer_overlay
 	
+/mob/living/simple_animal/mouse/mouse_op/New()
+	..()
+	builtin_emag = new /obj/item/weapon/card/emag()
+	builtin_emag.forceMove(src)
+	builtin_pinpointer = new /obj/item/weapon/pinpointer/nukeop()
+	builtin_pinpointer.forceMove(src)
 	
+/mob/living/simple_animal/mouse/mouse_op/Destroy()
+	qdel(builtin_emag)
+	qdel(builtin_pinpointer)
+	
+/mob/living/simple_animal/mouse/mouse_op/Life()
+	..()
+	regular_hud_updates()
+	update_builtin_pinpointer()
+	
+/mob/living/simple_animal/mouse/mouse_op/UnarmedAttack(var/atom/A, var/proximity_flag, var/params)	
+	if(istype(A,/mob/living))
+		var/mob/living/mob_target = A 
+		if(istype(mob_target,/mob/living/simple_animal/mouse/mouse_op))
+			visible_message("<span class='info'>\The [src] electro-nuzzles \the [mob_target].</span>")
+		else
+			unarmed_attack_mob(mob_target)
+	else
+		if(istype(A, /obj/machinery/door/airlock))
+			visible_message("<span class='danger'>\The [src] begins to glow with electricity!</span>")
+			if(do_after(src, A, 10 SECONDS))
+				visible_message("<span class='danger'>\The [src] sends an arc of energy towards \the [A]!</span>")
+				A.attackby(builtin_emag, src)
+		else if((istype(A, /obj/machinery) || istype(A, /obj/structure)) && CanAttack(A))
+			return ..()
+		else
+			A.attack_hand(src)		
+			
+/mob/living/simple_animal/mouse/mouse_op/get_unarmed_damage(var/atom/victim)
+	if(istype(victim,/mob/living))
+		return rand(melee_damage_lower,melee_damage_upper)
+	else
+		return rand(4,8) //Can't energy chompu~ a window
+	
+/mob/living/simple_animal/mouse/mouse_op/get_unarmed_hit_sound()
+	return 'sound/weapons/blade1.ogg'
+
+/mob/living/simple_animal/mouse/mouse_op/get_attack_message(var/target, var/attack_verb)
+	return "<span class='danger'>\The [src] [attack_verb] \the [target]!</span>"
+
+/mob/living/simple_animal/mouse/mouse_op/get_unarmed_verb(var/target)
+	return "energy-chomps"
+
+/mob/living/simple_animal/mouse/mouse_op/get_unarmed_sharpness()
+	return 1.5 //Same as energy sword
+
 /mob/living/simple_animal/mouse/mouse_op/show_inv(mob/living/carbon/user)
 	user.set_machine(src)
-	var/dat = ""
+	var/dat
 	var/obj/item/I = held_items[1]
-	dat += "<B>[capitalize("Magneto Disk Gripper")]</B> <A href='?src=\ref[src];hands=[1]'>[makeStrippingButton(I)]</A><BR>"
+	dat += "<B>Magneto Disk-Gripper</B> <A href='?src=\ref[src];hands=[1]'>[makeStrippingButton(I)]</A><BR>"
 	dat += "<BR><BR><A href='?src=\ref[user];mach_close=mob\ref[src]'>Close</A>"
 	var/datum/browser/popup = new(user, "mob\ref[src]", "[src]", 340, 500)
 	popup.set_content(dat)
 	popup.open()
+	
+/mob/living/simple_animal/mouse/mouse_op/proc/update_builtin_pinpointer()
+	message_admins("A")
+	if(!obj_overlays)
+		return
+	var/obj/abstract/Overlays/hand_layer/O = obj_overlays["PINPOINTER-SPECIAL"]
+	if(!O)
+		O = getFromPool(/obj/abstract/Overlays/hand_layer)
+		obj_overlays["PINPOINTER-SPECIAL"] = O
+	else
+		overlays.Remove(O)
+		O.overlays.len = 0
+	var/obj/item/I = builtin_pinpointer
+	if(I && I.is_visible())	
+		message_admins("[I]")
+		var/t_state = I.item_state
+		var/t_inhand_state = I.inhand_states[get_direction_by_index(2)]
+		var/icon/check_dimensions = new(t_inhand_state)
+		if(!t_state)
+			t_state = I.icon_state
+		O.name = "PINPOINTER"
+		O.icon = t_inhand_state
+		O.icon_state = t_state
+		O.color = I.color
+		O.pixel_x = -1*(check_dimensions.Width() - WORLD_ICON_SIZE)/2
+		O.pixel_y = -1*(check_dimensions.Height() - WORLD_ICON_SIZE)/2
+		O.layer = O.layer
+		if(I.dynamic_overlay && I.dynamic_overlay["PINPOINTER-SPECIAL"])
+			var/image/dyn_overlay = I.dynamic_overlay["PINPOINTER-SPECIAL"]
+			O.overlays.Add(dyn_overlay)
+		I.screen_loc = get_held_item_ui_location(2)
+		overlays.Add(O)
+	update_icons()	
 
 /mob/living/simple_animal/mouse/mouse_op/update_inv_hand(index, var/update_icons = 1)
-	message_admins("the fuck")
 	if(!obj_overlays)
 		return
 	var/obj/abstract/Overlays/hand_layer/O = obj_overlays["[HAND_LAYER]-[index]"]
@@ -599,6 +686,7 @@
 		O.overlays.len = 0
 	var/obj/item/I = get_held_item_by_index(index)
 	if(I && I.is_visible())
+		message_admins("[I]")
 		var/t_state = I.item_state
 		var/t_inhand_state = I.inhand_states[get_direction_by_index(index)]
 		var/icon/check_dimensions = new(t_inhand_state)
@@ -618,6 +706,9 @@
 		overlays.Add(O)
 	if(update_icons)
 		update_icons()
+
+			
+			
 	
 /mob/living/simple_animal/mouse/mouse_op/death(var/gibbed = FALSE)
 	..(TRUE)
@@ -626,6 +717,7 @@
 
 /mob/living/simple_animal/mouse/mouse_op/Login()
 	..()
-	to_chat(src, 	"You are a mouse operative. As a Syndicate-trained mouse, you come equipped with many tools. \
-					Your hardsuit makes you immune to all atmospherics, and comes with a nuclear disk gripper. \
-					Your jaws have been replaced with mini-energy blades, and a pinpointer is installed in your brain.</span>")	
+	to_chat(src, 	"<span class='danger'>You are a mouse operative. As a Syndicate-trained mouse, you come equipped with many tools.<br> \
+					Your hardsuit makes you immune to all atmospherics and comes with a nuclear disk gripper.<br> \
+					Your jaws have been replaced with mini-energy blades and a pinpointer is installed in your brain.<br> \
+					Your built-in emag also allows you to open almost any door whenever vent crawling fails.<br></span>")	

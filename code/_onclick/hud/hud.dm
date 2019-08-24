@@ -241,7 +241,8 @@ var/global/obj/abstract/screen/clicker/catcher = new()
 		hologram_hud()
 	else if(isgrinch(mymob))
 		grinch_hud()
-
+	else if(istype(mymob,/mob/living/simple_animal/mouse/mouse_op))
+		mouse_op_hud()
 	if(isliving(mymob))
 		var/obj/abstract/screen/using
 		using = getFromPool(/obj/abstract/screen)

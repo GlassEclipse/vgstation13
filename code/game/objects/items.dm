@@ -850,6 +850,15 @@
 		return FALSE
 	if(user.incapacitated() || !Adjacent(user))
 		return FALSE
+	if(istype(user, /mob/living/simple_animal/mouse/mouse_op))
+		if(anchored || (!istype(loc, /turf) && !is_holder_of(user, src)))
+			to_chat(user, "<span class='warning'>You can't pick that up!</span>")
+			return FALSE
+		if(istype(src,/obj/item/weapon/disk/nuclear))
+			return TRUE
+		else
+			to_chat(user, "You can't pick that up!")
+			return FALSE			
 	if((!iscarbon(user) && !isMoMMI(user)) && !ishologram(user) && !isgrinch(user) || isbrain(user)) //Is not a carbon being, MoMMI, advanced hologram, or is a brain
 		to_chat(user, "You can't pick things up!")
 		return FALSE

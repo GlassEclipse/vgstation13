@@ -52,6 +52,9 @@
 			if(pai_override)
 				pai_container.throwkey_integrated_pai(pai_override)
 				return
+			if(istype(usr,/mob/living/simple_animal/mouse/mouse_op))
+				to_chat(usr, "<span class='warning'>This mob type cannot throw items.</span>")
+				return
 			if(isliving(usr))
 				var/mob/living/L = usr
 				L.toggle_throw_mode()
@@ -64,7 +67,7 @@
 			if(mob.remove_spell_channeling()) //Interrupt to remove spell channeling on dropping
 				to_chat(usr, "<span class='notice'>You cease waiting to use your power")
 				return
-			if(iscarbon(usr) || ishologram(usr))
+			if(iscarbon(usr) || ishologram(usr) || istype(usr,/mob/living/simple_animal/mouse/mouse_op))
 				var/mob/living/carbon/C = usr
 				if(!C.get_active_hand())
 					to_chat(usr, "<span class='warning'>You have nothing to drop in your hand.</span>")
