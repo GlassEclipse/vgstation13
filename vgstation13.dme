@@ -135,6 +135,7 @@
 #include "code\_onclick\hud\martian.dm"
 #include "code\_onclick\hud\mommi.dm"
 #include "code\_onclick\hud\monkey.dm"
+#include "code\_onclick\hud\mouse_op.dm"
 #include "code\_onclick\hud\movable_screen_objects.dm"
 #include "code\_onclick\hud\other_mobs.dm"
 #include "code\_onclick\hud\pai.dm"
