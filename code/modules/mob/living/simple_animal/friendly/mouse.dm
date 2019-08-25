@@ -574,7 +574,6 @@
 	melee_damage_lower = 10
 	melee_damage_upper = 20
 	
-	var/list/obj/abstract/Overlays/obj_overlays[TOTAL_LAYERS]
 	var/obj/item/weapon/card/emag/builtin_emag //Airlocks don't use emag_act(), so we need to attack it with an emag. Sorry.
 	var/obj/item/weapon/pinpointer/nukeop/builtin_pinpointer 
 	var/obj/abstract/Overlays/hand_layer/pinpointer_overlay
@@ -642,68 +641,15 @@
 	popup.open()
 	
 /mob/living/simple_animal/mouse/mouse_op/proc/update_builtin_pinpointer()
-	message_admins("A")
-	if(!obj_overlays)
-		return
-	var/obj/abstract/Overlays/hand_layer/O = obj_overlays["PINPOINTER-SPECIAL"]
-	if(!O)
-		O = getFromPool(/obj/abstract/Overlays/hand_layer)
-		obj_overlays["PINPOINTER-SPECIAL"] = O
-	else
-		overlays.Remove(O)
-		O.overlays.len = 0
 	var/obj/item/I = builtin_pinpointer
-	if(I && I.is_visible())	
-		message_admins("[I]")
-		var/t_state = I.item_state
-		var/t_inhand_state = I.inhand_states[get_direction_by_index(2)]
-		var/icon/check_dimensions = new(t_inhand_state)
-		if(!t_state)
-			t_state = I.icon_state
-		O.name = "PINPOINTER"
-		O.icon = t_inhand_state
-		O.icon_state = t_state
-		O.color = I.color
-		O.pixel_x = -1*(check_dimensions.Width() - WORLD_ICON_SIZE)/2
-		O.pixel_y = -1*(check_dimensions.Height() - WORLD_ICON_SIZE)/2
-		O.layer = O.layer
-		if(I.dynamic_overlay && I.dynamic_overlay["PINPOINTER-SPECIAL"])
-			var/image/dyn_overlay = I.dynamic_overlay["PINPOINTER-SPECIAL"]
-			O.overlays.Add(dyn_overlay)
-		I.screen_loc = get_held_item_ui_location(2)
-		overlays.Add(O)
+	if(I)	
+		I.screen_loc = "CENTER:16,SOUTH:5"
 	update_icons()	
 
 /mob/living/simple_animal/mouse/mouse_op/update_inv_hand(index, var/update_icons = 1)
-	if(!obj_overlays)
-		return
-	var/obj/abstract/Overlays/hand_layer/O = obj_overlays["[HAND_LAYER]-[index]"]
-	if(!O)
-		O = getFromPool(/obj/abstract/Overlays/hand_layer)
-		obj_overlays["[HAND_LAYER]-[index]"] = O
-	else
-		overlays.Remove(O)
-		O.overlays.len = 0
 	var/obj/item/I = get_held_item_by_index(index)
 	if(I && I.is_visible())
-		message_admins("[I]")
-		var/t_state = I.item_state
-		var/t_inhand_state = I.inhand_states[get_direction_by_index(index)]
-		var/icon/check_dimensions = new(t_inhand_state)
-		if(!t_state)
-			t_state = I.icon_state
-		O.name = "[index]"
-		O.icon = t_inhand_state
-		O.icon_state = t_state
-		O.color = I.color
-		O.pixel_x = -1*(check_dimensions.Width() - WORLD_ICON_SIZE)/2
-		O.pixel_y = -1*(check_dimensions.Height() - WORLD_ICON_SIZE)/2
-		O.layer = O.layer
-		if(I.dynamic_overlay && I.dynamic_overlay["[HAND_LAYER]-[index]"])
-			var/image/dyn_overlay = I.dynamic_overlay["[HAND_LAYER]-[index]"]
-			O.overlays.Add(dyn_overlay)
 		I.screen_loc = get_held_item_ui_location(index)
-		overlays.Add(O)
 	if(update_icons)
 		update_icons()
 
